@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Avance — Economía UBA</title>
+<meta name="description" content="Seguimiento de Análisis Estadístico I y Macroeconomía I (FCE-UBA). Funciona sin conexión.">
+<meta name="theme-color" content="#faf8f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1916" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Avance">
+<style>
+/* layout: barra superior fija, una vista por pestaña, barra de pestañas abajo (alcance del pulgar). Tarjetas con celdas tocables. */
+:root{
+  --bg:#faf8f4; --surface:#ffffff; --border:#e3ddd0; --ink:#2b2621; --ink-dim:#6f665a;
+  --done:#3f7a5c; --done-bg:#e3f0e7;
+  --todo-bg:#f1ede3; --todo-ink:#8d8374;
+  --progress:#a97806; --progress-bg:#faf1d9;
+  --accent:#9c3d2e; --accent-bg:#f6e5e1;
+  --serif:"Iowan Old Style","Palatino Linotype",Georgia,"Noto Serif",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --tabh:64px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1c1916; --surface:#262220; --border:#3a342e; --ink:#eee8dd; --ink-dim:#a89c8a;
+    --done:#6fcb9c; --done-bg:#1e3328;
+    --todo-bg:#2b2622; --todo-ink:#7d7364;
+    --progress:#e3b23c; --progress-bg:#3a2f12;
+    --accent:#e08a74; --accent-bg:#3b2420;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.45;
+  padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));
+  padding-bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 24px)}
+.wrap{max-width:720px;margin:0 auto}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,summary:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--progress);outline-offset:2px}
+h1,h2,h3{font-family:var(--serif);margin:0;font-weight:600;text-wrap:balance}
+a{color:var(--accent)}
+
+/* barra superior */
+.top{position:sticky;top:0;z-index:20;background:var(--bg);padding-top:env(safe-area-inset-top,0px);margin:0 calc(-1 * max(14px,env(safe-area-inset-left,0px)));padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--border)}
+.top .wrap{display:flex;align-items:center;gap:10px;height:54px}
+.top h1{font-size:1.2rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top h1 small{display:block;font-family:var(--sans);font-size:.7rem;font-weight:400;color:var(--ink-dim);margin-top:-2px}
+.iconbtn{border:1px solid var(--border);background:var(--surface);border-radius:10px;height:40px;min-width:40px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:.85rem}
+.iconbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* pestañas */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs .row{display:grid;grid-template-columns:1fr 1fr;max-width:720px;margin:0 auto}
+.tabs button{height:var(--tabh);border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:.78rem;color:var(--ink-dim);font-weight:600}
+.tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabs button[aria-current="page"]{color:var(--done)}
+.tabs button[aria-current="page"]::after{content:"";width:28px;height:3px;border-radius:2px;background:var(--done);margin-top:1px}
+
+main{padding-top:16px}
+.sub{display:flex;gap:6px;margin:0 0 14px;padding:4px;background:var(--todo-bg);border-radius:12px}
+.sub button{flex:1;border:0;background:none;border-radius:9px;padding:9px 6px;font-weight:600;font-size:.9rem;color:var(--ink-dim)}
+.sub button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 15px;margin-bottom:12px}
+.lead{color:var(--ink-dim);font-size:.85rem;margin:0 0 12px}
+.row2{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.lbl{font-size:.9rem;font-weight:600}
+.cnt{font-size:.8rem;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.big{font-family:var(--serif);font-size:1.45rem;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.bar{height:9px;border-radius:5px;background:var(--todo-bg);overflow:hidden;margin:6px 0 2px}
+.bar i{display:block;height:100%;background:var(--done);border-radius:5px;transition:width .25s}
+.bar.cat i{background:var(--progress)}
+.gap{height:12px}
+
+/* pincel */
+.brush{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px;font-size:.82rem;color:var(--ink-dim)}
+.brush button{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.85rem;min-height:40px}
+.brush button[aria-pressed="true"][data-brush="d"]{background:var(--done-bg);border-color:var(--done);color:var(--done)}
+.brush button[aria-pressed="true"][data-brush="p"]{background:var(--progress-bg);border-color:var(--progress);color:var(--progress)}
+.brush .hint{flex-basis:100%;font-size:.76rem}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.76rem;color:var(--ink-dim);margin:0 0 12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+/* celdas */
+.grid{display:flex;flex-wrap:wrap;gap:6px}
+.cell{min-width:42px;height:42px;padding:0 4px;border-radius:9px;border:1px solid transparent;font-size:.9rem;font-variant-numeric:tabular-nums;display:flex;align-items:center;justify-content:center;position:relative;background:var(--todo-bg);color:var(--todo-ink)}
+.cell.done{background:var(--done-bg);color:var(--done);border-color:var(--done);font-weight:700}
+.cell.progress{background:var(--progress-bg);color:var(--progress);border-color:var(--progress);font-weight:700;box-shadow:0 0 0 2px var(--progress-bg)}
+.cell.opt{border-style:dashed;border-color:var(--ink-dim)}
+.cell.star::after{content:"★";position:absolute;top:-6px;right:-3px;font-size:.78rem;color:var(--progress);text-shadow:0 0 3px var(--surface),0 0 3px var(--surface)}
+.note{font-size:.78rem;color:var(--ink-dim);margin:10px 0 0;line-height:1.4}
+.p-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.p-title{font-family:var(--serif);font-weight:600;font-size:1.05rem}
+.p-topic{font-size:.8rem;color:var(--ink-dim);margin:2px 0 12px}
+
+/* mankiw */
+.focus{border-color:var(--progress)}
+.focus h2{font-size:1rem;color:var(--progress);margin-bottom:6px}
+.focus ul{margin:0;padding-left:18px;font-size:.9rem}
+.focus li{margin:3px 0}
+.parte{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin:22px 2px 8px;font-weight:700}
+.cap.pend{border-color:var(--progress);box-shadow:0 0 0 1px var(--progress)}
+.c-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.c-title{font-family:var(--serif);font-weight:600;font-size:1rem;min-width:0}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.chip{font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--todo-bg);color:var(--ink-dim);border:1px solid var(--border)}
+.chip.cat{background:var(--progress-bg);color:var(--progress);border-color:var(--progress)}
+.c-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
+.small{border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:6px 10px;font-size:.78rem;font-weight:600;min-height:34px}
+details.secs{margin-top:10px}
+details.secs>summary{font-size:.8rem;color:var(--ink-dim);cursor:pointer;padding:6px 0;width:max-content;max-width:100%}
+.srow{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:0;background:none;padding:9px 2px;border-bottom:1px solid var(--border);font-size:.88rem;min-height:44px}
+.srow:last-child{border-bottom:0}
+.srow .mk{flex:none;width:1.2em;text-align:center;font-weight:800}
+.srow .n{flex:none;width:2.5em;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.srow.done .mk{color:var(--done)} .srow.progress .mk{color:var(--progress)} .srow.todo{color:var(--ink-dim)}
+
+/* clases */
+.evals{display:grid;gap:8px}
+.ev{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:.92rem;padding:9px 0;border-bottom:1px solid var(--border)}
+.ev:last-child{border-bottom:0}
+.ev b{font-variant-numeric:tabular-nums}
+.ev .when{font-size:.8rem;font-weight:700;color:var(--accent);white-space:nowrap}
+.ev.past{color:var(--ink-dim)} .ev.past .when{color:var(--ink-dim);font-weight:500}
+.ses{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.ses.hoy{border-color:var(--done);box-shadow:0 0 0 1px var(--done)}
+.ses.examen{border-color:var(--accent)}
+.s-head{display:flex;gap:12px;align-items:flex-start}
+.s-date{flex:none;text-align:center;min-width:46px}
+.s-date b{display:block;font-family:var(--serif);font-size:1.05rem;font-variant-numeric:tabular-nums}
+.s-date span{font-size:.72rem;color:var(--ink-dim);text-transform:uppercase}
+.s-tema{font-size:.92rem;font-weight:600;min-width:0}
+.s-tema small{display:block;color:var(--ink-dim);font-weight:400;font-size:.76rem}
+.items{margin:8px 0 0;display:grid}
+.it{display:flex;gap:12px;align-items:flex-start;padding:10px 2px;border-top:1px solid var(--border);min-height:46px;cursor:pointer}
+.it input{position:absolute;opacity:0;width:1px;height:1px}
+.it .box{flex:none;width:24px;height:24px;border-radius:7px;border:2px solid var(--ink-dim);margin-top:0;display:flex;align-items:center;justify-content:center}
+.it input:checked+.box{background:var(--done);border-color:var(--done)}
+.it input:checked+.box::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.it input:focus-visible+.box{outline:2px solid var(--progress);outline-offset:2px}
+.it .txt{font-size:.9rem;min-width:0;overflow-wrap:anywhere}
+.it .txt b{font-family:var(--sans);font-weight:700}
+.it .ty{display:block;font-style:normal;font-size:.7rem;color:var(--ink-dim);margin-top:1px;text-transform:uppercase;letter-spacing:.05em}
+.it.op .txt,.it.pres .txt,.it.rtas .txt{color:var(--ink-dim)}
+.it.guia .ty{color:var(--progress)}
+.it input:checked~.txt{text-decoration:line-through;text-decoration-color:var(--ink-dim)}
+.upto{margin-top:8px;border:1px dashed var(--border);background:none;border-radius:9px;padding:9px 12px;font-size:.8rem;color:var(--ink-dim);width:100%;min-height:40px}
+details.unit{margin-bottom:10px}
+details.unit>summary{list-style:none;cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 14px;display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-family:var(--serif);font-weight:600;min-height:48px}
+details.unit>summary::-webkit-details-marker{display:none}
+details.unit[open]>summary{margin-bottom:10px}
+details.unit>summary .cnt{font-family:var(--sans);font-weight:400}
+
+/* aviso y snackbar */
+.warn{background:var(--accent-bg);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:.88rem}
+#snack{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 12px);z-index:40;background:var(--ink);color:var(--bg);padding:11px 14px;border-radius:12px;font-size:.88rem;display:flex;gap:14px;align-items:center;max-width:calc(100vw - 28px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#snack[hidden]{display:none}
+#snack button{background:none;border:0;color:inherit;font-weight:800;text-decoration:underline;padding:4px 2px;min-height:32px}
+
+/* menú */
+dialog{border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--ink);padding:0;width:min(92vw,460px);max-height:88vh}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg{padding:18px;display:grid;gap:12px}
+.dlg h2{font-size:1.2rem}
+.dlg p{margin:0;font-size:.88rem;color:var(--ink-dim)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:1px solid var(--border);background:var(--bg);border-radius:11px;padding:12px;font-weight:600;font-size:.92rem;min-height:48px}
+.btn.primary{background:var(--done);border-color:var(--done);color:#fff}
+.btn.danger{background:var(--accent);border-color:var(--accent);color:#fff}
+.dlg textarea{width:100%;min-height:90px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--ink);padding:10px;font:12px ui-monospace,Consolas,monospace}
+.dlg details summary{font-size:.85rem;color:var(--ink-dim);cursor:pointer;padding:6px 0}
+.dlg .meta{font-size:.78rem}
+.sumtbl{display:grid;grid-template-columns:1fr auto auto;gap:4px 14px;font-size:.88rem;font-variant-numeric:tabular-nums}
+.sumtbl b{color:var(--ink-dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <h1 id="ttl">Avance<small id="ttl-sub">Análisis Estadístico I</small></h1>
+  <button class="iconbtn" id="btn-menu" aria-label="Respaldo: exportar o importar">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 19h14"/></svg><span>Respaldo</span>
+  </button>
+</div></header>
+
+<div class="wrap"><main id="view"></main></div>
+
+<nav class="tabs" aria-label="Materias"><div class="row">
+  <button data-tab="stat" id="tab-stat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Estadística</button>
+  <button data-tab="macro" id="tab-macro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M4 6v14M4 16c6 0 5-9 16-9"/></svg>Macroeconomía</button>
+</div></nav>
+
+<div id="snack" role="status" aria-live="polite" hidden><span id="snack-msg"></span><button id="snack-act" hidden></button></div>
+
+<dialog id="dlg"><div class="dlg" id="dlg-body"></div></dialog>
+<input type="file" id="file" accept="application/json,.json" hidden>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= DATOS ================= */
+var VERSION='1.2';
+var STORE_KEY='avance-econ-v1', UI_KEY='avance-econ-ui';
+
+var STAT=[
+ {id:'p1',title:'Práctica 1 · Probabilidad',topic:'Combinatoria y conteo (1–8) · independencia, Bayes, confiabilidad',total:32,done:[1,2,3,4,5,6,7,8,18,19,22,24,26,30,32]},
+ {id:'p2',title:'Práctica 2 · Variables aleatorias',topic:'Función de probabilidad/densidad, F(x), E(X), Var(X), percentiles, asimetría',total:20,done:[1,5,9,12,15,16,17,19,20],note:'Selección curada de 9 (de 20 ejercicios): el resto no cubre técnica nueva.'},
+ {id:'p3',title:'Práctica 3 · Distribuciones discretas',topic:'Binomial, Geométrica, Binomial negativa, Hipergeométrica, Poisson',total:30,done:[1,3,5,6,7,10,11,12,13,16,17,18,21,22,26,28],star:[7],note:'★ Ej. 7: fórmula recursiva de momentos.'},
+ {id:'p4',title:'Práctica 4 · Distribuciones continuas',topic:'Gamma, Exponencial, Beta, Uniforme',total:25,done:[1,2,3,4,5,6,8,9,10,12,13,14,15,16,17,18,19,20,21,22],star:[1,2,10,12,13],opt:[7,11,24],note:'★ Claves de parcial: leer un gráfico e identificar distribución y parámetros (Gamma 1 y 2, Beta 12 y 13) y E y Var por inspección (10). Borde punteado = opcionales (7, 11, 24).'},
+ {id:'p5',title:'Práctica 5 · Normal y derivadas',topic:'Estandarización y distribuciones derivadas de la normal',total:23,done:[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],note:'Ej. 1–15 hechos (el alcance del 1.er parcial). Los 16–23 están sin cubrir.'},
+ {id:'p6',title:'Práctica 6 · EDA',topic:'Análisis exploratorio de datos',total:15,done:[]},
+ {id:'p7',title:'Práctica 7 · Números índices',topic:'Números índices',total:10,done:[]},
+ {id:'p8',title:'Práctica 8 · Distribuciones muestrales',topic:'Distribuciones muestrales y nociones de estimación puntual',total:29,done:[]}
+];
+
+/* Bibliografía de Análisis Estadístico I (Prof. Córdoba), por tema */
+var PM='Pliego y Maya', LD='Lind';
+var BIB=[
+ {tema:'Probabilidad',prac:'Práctica 1',items:[{k:'pm1',b:PM,t:'cap. 1'}]},
+ {tema:'Variables aleatorias',prac:'Práctica 2',items:[{k:'pm2',b:PM,t:'cap. 2'},{k:'pm4',b:PM,t:'cap. 4 (apartados 4.1, 4.3, 4.4, 4.6 y 4.8)'}]},
+ {tema:'Distribuciones discretas',prac:'Práctica 3',items:[{k:'pm6',b:PM,t:'cap. 6 (sin el apartado 6.9)'}]},
+ {tema:'Distribuciones continuas',prac:'Práctica 4',items:[{k:'pm7a',b:PM,t:'cap. 7 (apartados 7.1, 7.4 y 7.5)'}]},
+ {tema:'Distribución normal y derivadas de la normal',prac:'Práctica 5',items:[{k:'pm7b',b:PM,t:'cap. 7 (apartados 7.2 y 7.3)'}]},
+ {tema:'Análisis de datos',items:[{k:'l3',b:LD,t:'cap. 3'},{k:'l4',b:LD,t:'cap. 4'}]},
+ {tema:'Números índices',items:[{k:'l17',b:LD,t:'cap. 17'}]},
+ {tema:'Distribuciones muestrales y TCL',items:[{k:'pm9',b:PM,t:'cap. 9 (apartados 9.4 a 9.7)'},{k:'l8',b:LD,t:'cap. 8'}]},
+ {tema:'Estimación por intervalos',items:[{k:'l9',b:LD,t:'cap. 9'}]},
+ {tema:'Test de hipótesis',items:[{k:'l10',b:LD,t:'cap. 10'}]}
+];
+var BIB_BOOKS={'Pliego y Maya':'Pliego y Maya · Fundamentos de Probabilidad','Lind':'Lind y otros · Estadística aplicada a los Negocios y la Economía'};
+
+var CAT={1:'U1',2:'U1',4:'U1',3:'U2',11:'U3',12:'U3',7:'U4',10:'U4',5:'U5',14:'U5',6:'U6',13:'U6'};
+var CAT_ORDER=[1,2,4,3,11,12,7,10,5,14,6,13];
+var PAGES={7:33,10:34,13:50,14:41};
+var MK_DONE_CAPS=[1,2,3,4,5,6,7,10,11,12];
+var PARTES=[
+ {name:'Parte 1 · Introducción',caps:[
+  [1,'La ciencia de la macroeconomía',['¿Qué estudian los macroeconomistas?','Cómo piensan los economistas','La estructura de este libro']],
+  [2,'Los datos macroeconómicos',['El producto interior bruto','El índice de precios de consumo','La tasa de paro','Conclusiones']]]},
+ {name:'Parte 2 · La teoría clásica: largo plazo',caps:[
+  [3,'La renta nacional: de dónde viene y adónde va',['¿Qué determina la producción total?','Distribución de la renta nacional entre los factores','¿Qué determina la demanda de bienes y servicios?','Equilibrio de la oferta y la demanda','Conclusiones']],
+  [4,'El sistema monetario: qué es y cómo funciona',['¿Qué es el dinero?','El papel de los bancos en el sistema monetario','Cómo influyen los bancos centrales en la oferta monetaria','Conclusiones']],
+  [5,'La inflación: causas, efectos y costes sociales',['La teoría cuantitativa del dinero','El señoriaje','La inflación y los tipos de interés','El tipo de interés nominal y la demanda de dinero','Los costes sociales de la inflación','La hiperinflación','Conclusiones: la dicotomía clásica']],
+  [6,'La economía abierta',['Flujos internacionales de capitales y de bienes','Ahorro e inversión en una pequeña economía abierta','Los tipos de cambio','Conclusiones: Estados Unidos como gran economía abierta','Apéndice: la gran economía abierta']],
+  [7,'El paro y el mercado de trabajo',['Pérdida del empleo, búsqueda de trabajo y tasa natural de paro','Búsqueda de empleo y paro friccional','Rigidez de los salarios reales y paro estructural','El mercado de trabajo en Estados Unidos','El mercado de trabajo en Europa','Conclusiones']]]},
+ {name:'Parte 3 · Crecimiento: muy largo plazo',caps:[
+  [8,'Crecimiento económico I: capital y población',['La acumulación de capital','El nivel de capital de la regla de oro','El crecimiento de la población','Conclusiones']],
+  [9,'Crecimiento económico II: tecnología, análisis empírico y política',['El progreso tecnológico en el modelo de Solow','De la teoría a los hechos del crecimiento','Medidas para fomentar el crecimiento','Más allá de Solow: crecimiento endógeno','Conclusiones']]]},
+ {name:'Parte 4 · Ciclos económicos: corto plazo',caps:[
+  [10,'Introducción a las fluctuaciones económicas',['Los hechos sobre el ciclo económico','Horizontes temporales en macroeconomía','La demanda agregada','La oferta agregada','La política de estabilización','Conclusiones']],
+  [11,'La demanda agregada I: construcción del modelo IS-LM',['El mercado de bienes y la curva IS','El mercado de dinero y la curva LM','Conclusiones: el equilibrio a corto plazo']],
+  [12,'La demanda agregada II: aplicación del modelo IS-LM',['Explicación de las fluctuaciones con IS-LM','IS-LM como teoría de la demanda agregada','La Gran Depresión','Conclusiones']],
+  [13,'Reconsideración de la economía abierta: Mundell-Fleming',['El modelo Mundell-Fleming','Pequeña economía abierta con tipos flotantes','Pequeña economía abierta con tipos fijos','Diferencias entre los tipos de interés','¿Tipos de cambio fluctuantes o fijos?','Del corto al largo plazo: nivel de precios variable','Nota final recordatoria']],
+  [14,'La oferta agregada y la disyuntiva inflación–paro',['La teoría básica de la oferta agregada','La inflación, el paro y la curva de Phillips','Conclusiones']]]},
+ {name:'Parte 5 · Temas de teoría y política económica',caps:[
+  [15,'Modelo dinámico de las fluctuaciones económicas',['Elementos del modelo','Cómo se resuelve el modelo','Cómo se utiliza el modelo','Dos aplicaciones: lecciones para la política monetaria','Conclusiones: hacia los modelos EDEG']],
+  [16,'Visiones distintas sobre la política de estabilización',['¿Debe ser la política económica activa o pasiva?','¿Debería basarse en reglas fijas o en la discreción?','Conclusiones']],
+  [17,'La deuda pública y los déficits presupuestarios',['La magnitud de la deuda pública de Estados Unidos','Problemas de medición','La teoría tradicional de la deuda pública','La teoría ricardiana de la deuda pública','Otras perspectivas sobre la deuda pública','Conclusiones']],
+  [18,'El sistema financiero: oportunidades y peligros',['¿Qué hace el sistema financiero?','Las crisis financieras','Conclusiones']],
+  [19,'Los microfundamentos del consumo y la inversión',['¿Qué determina el gasto en consumo?','¿Qué determina el gasto en inversión?','Conclusión: el papel crucial de las expectativas']],
+  ['E','Epílogo: ¿Qué sabemos y qué desconocemos?',['Las cuatro lecciones más importantes de la macroeconomía','Las cuatro cuestiones macroeconómicas más importantes que aún no se han resuelto']]]}
+];
+var CH=[]; PARTES.forEach(function(p){p.caps.forEach(function(c){CH.push({n:c[0],id:String(c[0]),t:c[1],secs:c[2],parte:p.name})})});
+function chById(id){return CH.filter(function(c){return c.id===String(id)})[0]}
+function chLabel(c){return c.n==='E'?'Epílogo':'Cap. '+c.n}
+
+/* Cronograma de Macro I (2C 2026), tomado del xlsx adjunto */
+var ROWS=[{"d":"2026-08-13","u":1,"t":"Presentación del curso y docentes; Ciclo-tendencia","kind":"clase","ob":[{"k":"OB1:27-31","code":"OB 1","cap":1,"pg":"27-31"},{"k":"NC1","code":"NC1","cap":null,"pg":null}],"op":[{"k":"SV1","code":"SV 1","cap":1,"pg":null},{"k":"VMU","code":"VMU","cap":null,"pg":null}],"guias":[],"pres":["U1C1"],"rtas":[]},{"d":"2026-08-19","u":1,"t":"Modelos; Mercado Walrasiano","kind":"clase","ob":[{"k":"NC2","code":"NC2","cap":null,"pg":null},{"k":"DP","code":"DP","cap":null,"pg":null}],"op":[{"k":"P1","code":"P1","cap":null,"pg":null}],"guias":[],"pres":["U1C2"],"rtas":[]},{"d":"2026-08-20","u":1,"t":"Cuentas Nacionales; Índices de Precios","kind":"clase","ob":[{"k":"OB2","code":"OB 2","cap":2,"pg":null},{"k":"INDEC20","code":"INDEC20","cap":null,"pg":null},{"k":"INDEC19","code":"INDEC19","cap":null,"pg":null}],"op":[{"k":"SL2","code":"SL 2","cap":2,"pg":null},{"k":"AV","code":"AV","cap":null,"pg":null}],"guias":[],"pres":["U1C3"],"rtas":[]},{"d":"2026-08-24","u":1,"t":"Cuentas Nacionales; Índices de Precios","kind":"clase","ob":[],"op":[{"k":"SL2","code":"SL 2","cap":2,"pg":null},{"k":"AV","code":"AV","cap":null,"pg":null}],"guias":["Guía U1C1-U1C3"],"pres":[],"rtas":["Rtas U1C1-U1C3"]},{"d":"2026-08-26","u":1,"t":"Consistencia; Ley de Say; Modelo Tres Brechas; Inventarios","kind":"clase","ob":[{"k":"NC3","code":"NC3","cap":null,"pg":null}],"op":[{"k":"NC4:36-30","code":"NC4","cap":null,"pg":"36-30"},{"k":"P2","code":"P2","cap":null,"pg":null},{"k":"P3","code":"P3","cap":null,"pg":null}],"guias":["Guía U1C4"],"pres":["U1C4"],"rtas":["Rtas U1C4"]},{"d":"2026-08-27","u":1,"t":"Dinero, Banco Central y Sistema Financiero","kind":"clase","ob":[{"k":"OB3:106-128","code":"OB 3","cap":3,"pg":"106-128"}],"op":[{"k":"GM29","code":"GM 29","cap":29,"pg":null}],"guias":[],"pres":["U1C5"],"rtas":[]},{"d":"2026-08-31","u":1,"t":"Dinero, Banco Central y Sistema Financiero","kind":"clase","ob":[{"k":"OB3:106-128","code":"OB 3","cap":3,"pg":"106-128"}],"op":[{"k":"GM29","code":"GM 29","cap":29,"pg":null}],"guias":[],"pres":[],"rtas":[]},{"d":"2026-09-02","u":2,"t":"Teoría clásica - Oferta, determinación del producto y empleo (clase virtual)","kind":"clase","ob":[{"k":"RF3","code":"RF 3","cap":3,"pg":null}],"op":[{"k":"P4","code":"P4","cap":null,"pg":null}],"guias":[],"pres":["U2C1"],"rtas":[]},{"d":"2026-09-03","u":2,"t":"Teoría clásica - Demanda, teoría cuantitativa del dinero","kind":"clase","ob":[{"k":"RF4","code":"RF 4","cap":4,"pg":null}],"op":[],"guias":[],"pres":["U2C2"],"rtas":[]},{"d":"2026-09-07","u":2,"t":"Modelo Keynesiano Simple (MKS) cerrado, multiplicador","kind":"clase","ob":[{"k":"RF5","code":"RF 5","cap":5,"pg":null}],"op":[],"guias":[],"pres":["U2C3"],"rtas":[]},{"d":"2026-09-09","u":3,"t":"Mercado monetario-financiero (LM)","kind":"clase","ob":[{"k":"RF5","code":"RF 5","cap":5,"pg":null}],"op":[],"guias":[],"pres":["U3C1"],"rtas":[]},{"d":"2026-09-10","u":2,"t":"Práctica 2: Modelo clásico y crítica de Keynes","kind":"practica","ob":[],"op":[],"guias":["Guía U2"],"pres":[],"rtas":["Rtas U2"]},{"d":"2026-09-14","u":3,"t":"Mercado de bienes dinámico (IS), equilibrio","kind":"clase","ob":[{"k":"RF6","code":"RF 6","cap":6,"pg":null}],"op":[],"guias":[],"pres":["U3C2 - IS","U3C2 - Equilibrio"],"rtas":[]},{"d":"2026-09-16","u":3,"t":"Mercado de bienes dinámico (IS), equilibrio","kind":"clase","ob":[{"k":"RF6","code":"RF 6","cap":6,"pg":null}],"op":[],"guias":[],"pres":[],"rtas":[]},{"d":"2026-09-17","u":3,"t":"ISLM, políticas fiscales y monetarias","kind":"clase","ob":[{"k":"RF7","code":"RF 7","cap":7,"pg":null}],"op":[],"guias":[],"pres":["U3C3"],"rtas":[]},{"d":"2026-09-23","u":3,"t":"Práctica 3: ISLM","kind":"practica","ob":[],"op":[],"guias":["Guía U3"],"pres":[],"rtas":["Rtas U3"]},{"d":"2026-09-24","u":3,"t":"Práctica 3: ISLM","kind":"practica","ob":[],"op":[],"guias":[],"pres":[],"rtas":[]},{"d":"2026-09-28","u":3,"t":"Clase de consulta","kind":"consulta","ob":[],"op":[],"guias":[],"pres":[],"rtas":[]},{"d":"2026-09-30","u":4,"t":"Mercado de trabajo keynesiano vs. clásico; OA - DA","kind":"clase","ob":[{"k":"RF8","code":"RF 8","cap":8,"pg":null}],"op":[],"guias":[],"pres":["U4C1"],"rtas":[]},{"d":"2026-10-01","u":null,"t":"Examen 1","kind":"examen","ob":[],"op":[],"guias":[],"pres":[],"rtas":[]},{"d":"2026-10-05","u":4,"t":"Mercado de trabajo keynesiano vs. clásico; OA - DA","kind":"clase","ob":[{"k":"RF8","code":"RF 8","cap":8,"pg":null}],"op":[],"guias":[],"pres":[],"rtas":[]},{"d":"2026-10-07","u":4,"t":"Práctica 4: Mercado de trabajo, OA-DA","kind":"practica","ob":[],"op":[],"guias":["Guía U4"],"pres":[],"rtas":["Rtas U4"]},{"d":"2026-10-08","u":5,"t":"Expectativas, Curva de Phillips","kind":"clase","ob":[{"k":"RF10","code":"RF 10","cap":10,"pg":null}],"op":[{"k":"NC5","code":"NC5","cap":null,"pg":null}],"guias":[],"pres":["U5C1"],"rtas":[]},{"d":"2026-10-14","u":5,"t":"Expectativas, Curva de Phillips, Desinflaciones","kind":"clase","ob":[{"k":"RF10","code":"RF 10","cap":10,"pg":null},{"k":"P5","code":"P5","cap":null,"pg":null},{"k":"P6","code":"P6","cap":null,"pg":null}],"op":[{"k":"NC5","code":"NC5","cap":null,"pg":null}],"guias":[],"pres":["U5C2"],"rtas":[]},{"d":"2026-10-15","u":null,"t":"Devolución 1er examen","kind":"devolucion","ob":[],"op":[],"guias":[],"pres":[],"rtas":[]},{"d":"2026-10-19","u":5,"t":"Expectativas, Curva de Phillips","kind":"clase","ob":[{"k":"RF10","code":"RF 10","cap":10,"pg":null}],"op":[{"k":"NC5","code":"NC5","cap":null,"pg":null}],"guias":[],"pres":["U5C1"],"rtas":[]},{"d":"2026-10-21","u":5,"t":"Práctica 5: Inflación","kind":"practica","ob":[],"op":[],"guias":["Guía U5"],"pres":["U5C3"],"rtas":["Rtas U5"]},{"d":"2026-10-22","u":6,"t":"Introducción a economías abiertas: indicadores y estadísticas","kind":"clase","ob":[{"k":"OB18","code":"OB 18","cap":18,"pg":null}],"op":[{"k":"INDEC21","code":"INDEC21","cap":null,"pg":null},{"k":"SL14","code":"SL 14","cap":14,"pg":null}],"guias":["Guía U6C1"],"pres":["U6C1"],"rtas":[]},{"d":"2026-10-26","u":6,"t":"Introducción a economías abiertas: indicadores y estadísticas","kind":"clase","ob":[{"k":"OB18","code":"OB 18","cap":18,"pg":null}],"op":[{"k":"INDEC21","code":"INDEC21","cap":null,"pg":null},{"k":"SL14","code":"SL 14","cap":14,"pg":null}],"guias":[],"pres":[],"rtas":["Rtas U6C1","Rta ej. 5"]},{"d":"2026-10-28","u":6,"t":"MKS economía abierta","kind":"clase","ob":[{"k":"NC6:1-46","code":"NC6","cap":null,"pg":"1-46"},{"k":"OB19","code":"OB 19","cap":19,"pg":null}],"op":[],"guias":[],"pres":["U6C2"],"rtas":[]},{"d":"2026-10-29","u":6,"t":"ISLMBP - Mundell-Fleming. Política fiscal y monetaria.","kind":"clase","ob":[{"k":"RF15","code":"RF 15","cap":15,"pg":null}],"op":[{"k":"NC7","code":"NC7","cap":null,"pg":null}],"guias":[],"pres":["U6C3"],"rtas":[]},{"d":"2026-11-02","u":6,"t":"ISLMBP - Mundell-Fleming. Política fiscal y monetaria.","kind":"clase","ob":[{"k":"RF15","code":"RF 15","cap":15,"pg":null}],"op":[{"k":"NC7","code":"NC7","cap":null,"pg":null}],"guias":[],"pres":[],"rtas":[]},{"d":"2026-11-04","u":6,"t":"ISLMBP - Mundell-Fleming. Política fiscal y monetaria.","kind":"clase","ob":[{"k":"RF15","code":"RF 15","cap":15,"pg":null}],"op":[{"k":"NC7","code":"NC7","cap":null,"pg":null}],"guias":[],"pres":[],"rtas":[]},{"d":"2026-11-05","u":6,"t":"Clase de consulta; Práctica 6: Economías abiertas","kind":"consulta","ob":[],"op":[],"guias":["Guía U6C2-U6C3"],"pres":[],"rtas":["Rtas U6C2-U6C3"]},{"d":"2026-11-11","u":null,"t":"Clase de consulta; Práctica 6: Economías abiertas","kind":"consulta","ob":[],"op":[],"guias":[],"pres":[],"rtas":[]},{"d":"2026-11-12","u":null,"t":"Examen 2","kind":"examen","ob":[],"op":[],"guias":[],"pres":[],"rtas":[]},{"d":"2026-11-16","u":7,"t":"Clase optativa: Perspectivas estructuralistas sobre el sector externo y la distribución del ingreso","kind":"optativa","ob":[],"op":[{"k":"P8","code":"P8","cap":null,"pg":null},{"k":"P9","code":"P9","cap":null,"pg":null},{"k":"P10","code":"P10","cap":null,"pg":null},{"k":"P11","code":"P11","cap":null,"pg":null},{"k":"P12","code":"P12","cap":null,"pg":null}],"guias":[],"pres":[],"rtas":[]},{"d":"2026-11-19","u":null,"t":"Recuperatorio (examen 1 ó 2)","kind":"examen","ob":[],"op":[],"guias":[],"pres":[],"rtas":[]},{"d":"2026-11-25","u":7,"t":"Clase optativa: Efectos macroeconómicos del sector energético","kind":"optativa","ob":[],"op":[],"guias":[],"pres":[],"rtas":[]},{"d":"2026-11-30","u":null,"t":"Examen final","kind":"examen","ob":[],"op":[],"guias":[],"pres":[],"rtas":[]}];
+var UNITS={1:'Introducción',2:'Modelo clásico y crítica de Keynes',3:'IS-LM',4:'Mercado de trabajo, OA-DA',5:'Inflación',6:'Economías abiertas',7:'Tópicos (optativos)'};
+var BOOK={RF:'Froyen',OB:'Blanchard y Pérez Enrri',SL:'Sachs y Larraín',GM:'Mankiw, Principios',SV:'Snowdon y Vane'};
+var DOC={
+ NC1:'Ciclos económicos · Salvatore',NC2:'El modelo de un mercado walrasiano · Salvatore',NC3:'Marco de consistencia macroeconómico · Salvatore',
+ NC4:'El marco conceptual básico · Albrieu',NC5:'La curva de Phillips: auge y caída de la síntesis neoclásico-keynesiana · Bernat',
+ NC6:'Políticas macro en economías abiertas, parte 1 · Damill',NC7:'Políticas macro en economías abiertas, parte 2 · Damill',
+ DP:'De Pablo · Variables endógenas y exógenas (La Nación)',AV:'Vilker · Números índice',
+ VMU:'Video Uribe Echevarría, Dr. Honoris Causa UNC',
+ INDEC19:'INDEC · Metodología del IPC (págs. 7-11, 16-18, 23, 45-48)',INDEC20:'INDEC · Preguntas frecuentes del Sistema de Cuentas Nacionales',INDEC21:'INDEC · Las Cuentas Internacionales: preguntas frecuentes',
+ P1:'Guzmán, Heymann y Reyes · Rango de validez de los modelos económicos',P2:'Repeti · Hechos estilizados de los inventarios',P3:'IIEP-UBA · Reporte de política fiscal, julio 2026',
+ P4:'Krysa · Contabilidad del crecimiento para Argentina',P5:'Palazzo, Rapetti y Waldman · Stabilization programs in chronic-inflation countries',P6:'Donaldson et al. · Las desinflaciones y sus costos',
+ P8:'Díaz Alejandro · A note on the impact of devaluation and the redistributive effect',P9:'Olivera · On structural inflation and Latin-American structuralism',
+ P10:'Diamand · La estructura productiva desequilibrada argentina y el tipo de cambio',P11:'Frenkel · Decisiones de precio en alta inflación',P12:'Gerchunoff y Rapetti · La economía argentina y el conflicto distributivo estructural'
+};
+var LINKS={VMU:'https://www.youtube.com/watch?v=M3XO0txoeFU&t=1565s',P3:'https://economicas.uba.ar/iiep/wp-content/uploads/Reporte-Fiscal-Julio-2026.pdf'};
+var TYPE_LBL={ob:'Obligatoria',op:'Opcional',guia:'Guía',pres:'Presentación',rtas:'Respuestas',bib:'Bibliografía'};
+
+function tokInfo(t){
+  var code=t.code, name;
+  if(BOOK[code.split(' ')[0]]){name=BOOK[code.split(' ')[0]]+', cap. '+t.cap+(t.pg?' (págs. '+t.pg+')':'')}
+  else{name=DOC[t.k.split(':')[0]]||t.k; if(t.pg)name+=' (págs. '+t.pg+')'}
+  return {code:code,name:name,link:LINKS[t.k]};
+}
+function itemsOf(r){
+  var out=[];
+  r.ob.forEach(function(t){var i=tokInfo(t);out.push({k:t.k,type:'ob',counted:true,code:i.code,name:i.name,link:i.link})});
+  r.guias.forEach(function(g){out.push({k:g,type:'guia',counted:true,code:'',name:g})});
+  r.op.forEach(function(t){var i=tokInfo(t);out.push({k:t.k,type:'op',counted:false,code:i.code,name:i.name,link:i.link})});
+  r.pres.forEach(function(p){out.push({k:'pres:'+p,type:'pres',counted:false,code:'',name:'Presentación '+p.replace(' - ',' · ')})});
+  r.rtas.forEach(function(x){out.push({k:'rtas:'+x,type:'rtas',counted:false,code:'',name:x.replace(/^Rtas?/,'Respuestas')})});
+  return out;
+}
+ROWS.forEach(function(r){ if(r.kind==='consulta'&&!r.u) r.u=6; r.items=itemsOf(r); });
+var COUNTED={}; var CR_KEYS={};
+ROWS.forEach(function(r){r.items.forEach(function(i){CR_KEYS[i.k]=1; if(i.counted)COUNTED[i.k]=1})});
+var COUNTED_KEYS=Object.keys(COUNTED);
+var BIB_KEYS=[]; BIB.forEach(function(g){g.items.forEach(function(i){i.key='bib:'+i.k; BIB_KEYS.push(i.key); CR_KEYS[i.key]=1})});
+var MK_KEYS={}; CH.forEach(function(c){c.secs.forEach(function(_,i){MK_KEYS[c.id+'.'+(i+1)]=1})});
+
+/* ================= ESTADO Y GUARDADO ================= */
+var storageOK=true;
+function seed(){
+  var s={v:1,stat:{},mk:{},cr:{},meta:{lastExport:null,saved:null}};
+  STAT.forEach(function(p){s.stat[p.id]={};p.done.forEach(function(n){s.stat[p.id][n]='d'})});
+  MK_DONE_CAPS.forEach(function(n){var c=chById(n);c.secs.forEach(function(_,i){s.mk[c.id+'.'+(i+1)]='d'})});
+  s.cr.INDEC21=1;
+  return s;
+}
+function sanitize(o){
+  if(!o||typeof o!=='object')return null;
+  var src=(o.state&&typeof o.state==='object')?o.state:o;
+  if(src.v!==1||!src.stat||typeof src.stat!=='object'||!src.mk||typeof src.mk!=='object'||!src.cr||typeof src.cr!=='object')return null;
+  var s={v:1,stat:{},mk:{},cr:{},meta:{lastExport:null,saved:null}};
+  STAT.forEach(function(p){
+    s.stat[p.id]={}; var m=src.stat[p.id]; if(!m||typeof m!=='object')return;
+    Object.keys(m).forEach(function(n){var k=Number(n); if(Number.isInteger(k)&&k>=1&&k<=p.total&&(m[n]==='d'||m[n]==='p'))s.stat[p.id][k]=m[n]});
+  });
+  Object.keys(src.mk).forEach(function(k){if(MK_KEYS[k]===1&&(src.mk[k]==='d'||src.mk[k]==='p'))s.mk[k]=src.mk[k]});
+  Object.keys(src.cr).forEach(function(k){if(CR_KEYS[k]===1&&src.cr[k])s.cr[k]=1});
+  if(src.meta&&typeof src.meta.lastExport==='string')s.meta.lastExport=src.meta.lastExport;
+  return s;
+}
+function loadState(){
+  try{var t=localStorage.getItem(STORE_KEY); if(t){var s=sanitize(JSON.parse(t)); if(s)return s;}}catch(e){storageOK=false}
+  return null;
+}
+var state=loadState();
+var firstRun=!state;
+if(!state)state=seed();
+var ui={tab:'macro',sub:'mankiw',ssub:'ej'};
+try{var u=JSON.parse(localStorage.getItem(UI_KEY)||'null'); if(u&&(u.tab==='stat'||u.tab==='macro'))ui.tab=u.tab; if(u&&(u.sub==='mankiw'||u.sub==='clases'))ui.sub=u.sub; if(u&&(u.ssub==='ej'||u.ssub==='bib'))ui.ssub=u.ssub}catch(e){}
+function hashToUi(){
+  var h=location.hash.replace('#','');
+  if(h==='estadistica'||h==='stat'){ui.tab='stat';ui.ssub='ej'}
+  else if(h==='bibliografia'){ui.tab='stat';ui.ssub='bib'}
+  else if(h==='macro'||h==='mankiw'){ui.tab='macro';if(h==='mankiw')ui.sub='mankiw'}
+  else if(h==='clases'){ui.tab='macro';ui.sub='clases'}
+}
+hashToUi();
+function save(){
+  state.meta.saved=new Date().toISOString();
+  try{localStorage.setItem(STORE_KEY,JSON.stringify(state)); storageOK=true}catch(e){storageOK=false}
+}
+function saveUi(){try{localStorage.setItem(UI_KEY,JSON.stringify(ui))}catch(e){}}
+if(firstRun)save();
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+
+/* ================= UTILES ================= */
+function $(s,r){return (r||document).querySelector(s)}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function pct(a,b){return b?Math.round(100*a/b):0}
+function pad(n){return n<10?'0'+n:''+n}
+var TODAY=(function(){var q=new URLSearchParams(location.search).get('hoy'); if(q&&/^\d{4}-\d\d-\d\d$/.test(q))return q; var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())})();
+function dayNum(s){var p=s.split('-');return Date.UTC(+p[0],+p[1]-1,+p[2])/864e5}
+function daysTo(s){return Math.round(dayNum(s)-dayNum(TODAY))}
+function dmy(s){return s.slice(8)+'/'+s.slice(5,7)}
+function wd(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('es-AR',{weekday:'short'}).replace('.','')}
+function fmtTime(iso){if(!iso)return '—'; try{return new Date(iso).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return iso}}
+function whenTxt(s){var d=daysTo(s); if(d===0)return 'hoy'; if(d===1)return 'mañana'; if(d>1)return 'en '+d+' días'; if(d===-1)return 'ayer'; return 'pasó'}
+
+var snackTimer=null;
+function snack(msg,actLabel,actFn){
+  var el=$('#snack'); $('#snack-msg').textContent=msg;
+  var b=$('#snack-act');
+  if(actLabel){b.hidden=false;b.textContent=actLabel;b.onclick=function(){el.hidden=true;actFn()}}else{b.hidden=true;b.onclick=null}
+  el.hidden=false; clearTimeout(snackTimer); snackTimer=setTimeout(function(){el.hidden=true},actLabel?7000:2600);
+}
+function undoable(msg,fn){
+  var snapshot=JSON.stringify(state);
+  fn(); save(); render();
+  snack(msg,'Deshacer',function(){var prev=sanitize(JSON.parse(snapshot)); if(prev){state=prev; save(); render()}});
+}
+
+/* ================= CÁLCULOS ================= */
+var brush='d';
+var openCaps={}, openUnits={};
+function statDone(p){var m=state.stat[p.id],n=0;Object.keys(m).forEach(function(k){if(m[k]==='d')n++});return n}
+function chDone(c){var n=0;c.secs.forEach(function(_,i){if(state.mk[c.id+'.'+(i+1)]==='d')n++});return n}
+function crCounts(rows){
+  var seen={},d=0,t=0;
+  rows.forEach(function(r){r.items.forEach(function(i){if(i.counted&&!seen[i.k]){seen[i.k]=1;t++;if(state.cr[i.k])d++}})});
+  return {d:d,t:t};
+}
+
+/* ================= VISTAS ================= */
+function brushHTML(){
+  return '<div class="brush" role="group" aria-label="Qué marca al tocar una celda"><span>Al tocar:</span>'+
+   '<button data-brush="d" aria-pressed="'+(brush==='d')+'">✓ Hecho</button>'+
+   '<button data-brush="p" aria-pressed="'+(brush==='p')+'">● En curso</button>'+
+   '<span class="hint">Si tocás una celda que ya tiene ese estado, se borra.</span></div>';
+}
+function legendHTML(extra){
+  return '<div class="legend"><span><i class="sw" style="background:var(--done)"></i>Hecho</span><span><i class="sw" style="background:var(--progress)"></i>En curso</span><span><i class="sw" style="background:var(--todo-ink);opacity:.5"></i>Sin cubrir</span>'+(extra||'')+'</div>';
+}
+
+function viewEj(){
+  var D=0,T=0; STAT.forEach(function(p){D+=statDone(p);T+=p.total});
+  var h='<section class="card"><div class="row2"><span class="lbl">Progreso total</span><span class="big">'+pct(D,T)+'%</span></div>'+
+        '<div class="bar"><i style="width:'+pct(D,T)+'%"></i></div><div class="cnt">'+D+' de '+T+' ejercicios · Prof. Miguel Cordoba</div></section>';
+  h+=brushHTML()+legendHTML('<span><i class="sw" style="background:none;color:var(--progress);font-size:.8rem;width:auto">★</i>Clave de parcial</span>');
+  STAT.forEach(function(p){
+    var d=statDone(p), cells='';
+    for(var n=1;n<=p.total;n++){
+      var st=state.stat[p.id][n], cls=st==='d'?'done':st==='p'?'progress':'todo';
+      var star=p.star&&p.star.indexOf(n)>-1, opt=p.opt&&p.opt.indexOf(n)>-1;
+      cells+='<button class="cell '+cls+(star?' star':'')+(opt?' opt':'')+'" data-stat="'+p.id+':'+n+'" aria-label="'+esc(p.title)+', ejercicio '+n+': '+(st==='d'?'hecho':st==='p'?'en curso':'sin cubrir')+'">'+n+'</button>';
+    }
+    h+='<section class="card"><div class="p-head"><span class="p-title">'+esc(p.title)+'</span><span class="cnt">'+d+' / '+p.total+' · '+pct(d,p.total)+'%</span></div>'+
+       '<div class="p-topic">'+esc(p.topic)+'</div><div class="grid">'+cells+'</div>'+(p.note?'<p class="note">'+esc(p.note)+'</p>':'')+'</section>';
+  });
+  return h;
+}
+
+function viewMankiw(){
+  var sumD=0,sumT=0,catD=0,catT=0;
+  CH.forEach(function(c){var d=chDone(c);sumD+=d;sumT+=c.secs.length; if(CAT[c.n]){catD+=d;catT+=c.secs.length}});
+  var h='<section class="card"><div class="row2"><span class="lbl">Cátedra <span class="cnt">'+catD+' de '+catT+' secciones</span></span><span class="big">'+pct(catD,catT)+'%</span></div><div class="bar cat"><i style="width:'+pct(catD,catT)+'%"></i></div>'+
+     '<div class="gap"></div><div class="row2"><span class="lbl">Libro entero <span class="cnt">'+sumD+' de '+sumT+' secciones</span></span><span class="big">'+pct(sumD,sumT)+'%</span></div><div class="bar"><i style="width:'+pct(sumD,sumT)+'%"></i></div></section>';
+  h+=ahoraHTML();
+  h+=brushHTML()+legendHTML('<span><i class="sw" style="border:2px solid var(--progress);background:none"></i>Capítulo de la cátedra por leer</span>');
+  PARTES.forEach(function(p){
+    h+='<div class="parte">'+esc(p.name)+'</div>';
+    p.caps.forEach(function(row){
+      var c=chById(row[0]), d=chDone(c), cat=!!CAT[c.n], pend=cat&&d<c.secs.length, cells='', list='';
+      c.secs.forEach(function(t,i){
+        var k=c.id+'.'+(i+1), st=state.mk[k], cls=st==='d'?'done':st==='p'?'progress':'todo', lab=(c.n==='E'?'E.':c.n+'.')+(i+1);
+        cells+='<button class="cell '+cls+'" data-mk="'+k+'" title="'+esc(t)+'" aria-label="Sección '+lab+' '+esc(t)+': '+(st==='d'?'leída':st==='p'?'en curso':'sin leer')+'">'+lab+'</button>';
+        list+='<button class="srow '+cls+'" data-mk="'+k+'"><span class="mk" aria-hidden="true">'+(st==='d'?'✓':st==='p'?'●':'○')+'</span><span class="n">'+lab+'</span><span>'+esc(t)+'</span></button>';
+      });
+      var chips=(cat?'<span class="chip cat">Cátedra</span><span class="chip">'+CAT[c.n]+'</span>':'')+(PAGES[c.n]?'<span class="chip">'+PAGES[c.n]+' págs.</span>':'');
+      var all=d===c.secs.length;
+      h+='<section class="card cap'+(pend?' pend':'')+'"><div class="c-head"><div><div class="c-title">'+chLabel(c)+' — '+esc(c.t)+'</div>'+(chips?'<div class="chips">'+chips+'</div>':'')+'</div>'+
+         '<div class="c-side"><span class="cnt">'+d+' / '+c.secs.length+' · '+pct(d,c.secs.length)+'%</span><button class="small" data-capall="'+c.id+'">'+(all?'Borrar todo':'Capítulo completo')+'</button></div></div>'+
+         '<div class="grid">'+cells+'</div><details class="secs" data-open="c'+c.id+'"'+(openCaps['c'+c.id]?' open':'')+'><summary>Ver secciones</summary>'+list+'</details></section>';
+    });
+  });
+  return h;
+}
+function ahoraHTML(){
+  var li=[], prog=[];
+  CH.forEach(function(c){c.secs.forEach(function(t,i){if(state.mk[c.id+'.'+(i+1)]==='p')prog.push(chLabel(c)+', sección '+(c.n==='E'?'E.':c.n+'.')+(i+1)+' · '+t)})});
+  if(prog.length)li.push('<b>En curso:</b> '+prog.map(esc).join(' · '));
+  var pend=CAT_ORDER.map(chById).filter(function(c){return chDone(c)<c.secs.length});
+  if(pend.length){
+    var c=pend[0], first=0; for(var i=0;i<c.secs.length;i++){if(state.mk[c.id+'.'+(i+1)]!=='d'){first=i;break}}
+    li.push('<b>Siguiente de la cátedra, en tu orden:</b> '+pend.map(function(x){return 'cap. '+x.n+' ('+CAT[x.n]+')'}).join(' → ')+'. Empezá por la sección '+c.n+'.'+(first+1)+'.');
+    var allKnown=pend.every(function(x){return PAGES[x.n]}), tot=0;
+    if(allKnown){pend.forEach(function(x){tot+=PAGES[x.n]*(x.secs.length-chDone(x))/x.secs.length}); li.push('Te faltan unas <b>'+Math.round(tot)+' páginas</b> de la cátedra (según tu dataset).')}
+  }else li.push('<b>Cátedra al día:</b> leíste todos los capítulos que pide la cátedra.');
+  var nb=CH.filter(function(c){return chDone(c)<c.secs.length&&!CAT[c.n]})[0];
+  if(nb)li.push('Para el libro entero, el primer capítulo sin leer es el '+(nb.n==='E'?'Epílogo':'cap. '+nb.n)+'.');
+  return '<section class="card focus"><h2>Ahora</h2><ul>'+li.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul></section>';
+}
+
+function itemHTML(i){
+  var on=!!state.cr[i.k];
+  return '<label class="it '+i.type+'"><input type="checkbox" data-cr="'+esc(i.k)+'"'+(on?' checked':'')+'><span class="box" aria-hidden="true"></span><span class="txt">'+
+    (i.code?'<b>'+esc(i.code)+'</b> · ':'')+esc(i.name)+(i.link?' <a href="'+esc(i.link)+'" target="_blank" rel="noopener">abrir ↗</a>':'')+'<em class="ty">'+TYPE_LBL[i.type]+'</em></span></label>';
+}
+function sessionHTML(r){
+  var d=0,t=0; r.items.forEach(function(i){if(i.counted){t++;if(state.cr[i.k])d++}});
+  var sub=[]; if(r.u&&r.kind!=='examen')sub.push('U'+r.u); if(r.kind==='examen')sub.push(whenTxt(r.d)); if(t)sub.push(d+'/'+t+' por hacer');
+  var h='<article class="ses '+r.kind+(r.d===TODAY?' hoy':'')+'"><div class="s-head"><div class="s-date"><b>'+dmy(r.d)+'</b><span>'+wd(r.d)+'</span></div>'+
+        '<div class="s-tema">'+esc(r.t)+(sub.length?'<small>'+esc(sub.join(' · '))+'</small>':'')+'</div></div>';
+  if(r.items.length){
+    var order={ob:0,guia:1,op:2,pres:3,rtas:4};
+    var its=r.items.slice().sort(function(a,b){return order[a.type]-order[b.type]});
+    h+='<div class="items">'+its.map(itemHTML).join('')+'</div>';
+  }
+  if(t)h+='<button class="upto" data-upto="'+r.d+'">Marcar todo lo obligatorio hasta esta clase</button>';
+  return h+'</article>';
+}
+function viewClases(){
+  var all=crCounts(ROWS);
+  var lect=0,lectD=0,gu=0,guD=0;
+  COUNTED_KEYS.forEach(function(k){var g=k.indexOf('Guía')===0; if(g){gu++;if(state.cr[k])guD++}else{lect++;if(state.cr[k])lectD++}});
+  var h='<section class="card"><div class="row2"><span class="lbl">Obligatorio de la cátedra</span><span class="big">'+pct(all.d,all.t)+'%</span></div><div class="bar"><i style="width:'+pct(all.d,all.t)+'%"></i></div>'+
+        '<div class="cnt">'+lectD+' de '+lect+' lecturas · '+guD+' de '+gu+' guías · cronograma actualizado de Macro I (Krysa)</div></section>';
+  var ev=ROWS.filter(function(r){return r.kind==='examen'||r.kind==='devolucion'});
+  h+='<section class="card"><h2 style="font-size:1rem;margin-bottom:4px">Evaluaciones</h2><div class="evals">'+ev.map(function(r){
+    var past=daysTo(r.d)<0; return '<div class="ev'+(past?' past':'')+'"><span><b>'+dmy(r.d)+'</b> · '+esc(r.t)+'</span><span class="when">'+whenTxt(r.d)+'</span></div>';
+  }).join('')+'</div></section>';
+  var upcoming=ROWS.filter(function(r){return r.kind!=='devolucion'&&r.d>=TODAY}).slice(0,3);
+  if(upcoming.length){h+='<div class="parte">Lo que viene</div>'+upcoming.map(sessionHTML).join('')}
+  var nextU=upcoming.length&&upcoming[0].u?upcoming[0].u:null;
+  h+='<div class="parte">Todas las clases, por unidad</div>';
+  for(var u=1;u<=7;u++){
+    var rows=ROWS.filter(function(r){return r.u===u&&r.kind!=='examen'&&r.kind!=='devolucion'}); if(!rows.length)continue;
+    var c=crCounts(rows), key='u'+u, open=(key in openUnits)?openUnits[key]:(u===nextU);
+    h+='<details class="unit" data-open="'+key+'"'+(open?' open':'')+'><summary><span>U'+u+' · '+esc(UNITS[u])+'</span><span class="cnt">'+(c.t?c.d+'/'+c.t:'sin tareas')+'</span></summary>'+rows.map(sessionHTML).join('')+'</details>';
+  }
+  return h;
+}
+function viewBib(){
+  var tot=BIB_KEYS.length, d=0; BIB_KEYS.forEach(function(k){if(state.cr[k])d++});
+  var h='<section class="card"><div class="row2"><span class="lbl">Bibliografía leída</span><span class="big">'+pct(d,tot)+'%</span></div><div class="bar"><i style="width:'+pct(d,tot)+'%"></i></div>'+
+        '<div class="cnt">'+d+' de '+tot+' lecturas · capítulos por tema que indica el Prof. Córdoba</div></section>';
+  h+='<section class="card"><p class="lead" style="margin:0"><b>Libros:</b> '+esc(BIB_BOOKS[PM])+' y '+esc(BIB_BOOKS[LD])+'.</p></section>';
+  BIB.forEach(function(g){
+    var gd=0; g.items.forEach(function(i){if(state.cr[i.key])gd++});
+    h+='<section class="card"><div class="p-head"><span class="p-title">'+esc(g.tema)+'</span><span class="cnt">'+gd+' / '+g.items.length+'</span></div>'+
+       (g.prac?'<div class="chips" style="margin:6px 0 2px"><span class="chip">'+g.prac+'</span></div>':'')+
+       '<div class="items">'+g.items.map(function(i){return itemHTML({k:i.key,type:'bib',code:i.b,name:i.t})}).join('')+'</div></section>';
+  });
+  return h;
+}
+function viewStat(){
+  var s='<div class="sub" role="group" aria-label="Sección"><button data-ssub="ej" aria-pressed="'+(ui.ssub==='ej')+'">Ejercicios</button><button data-ssub="bib" aria-pressed="'+(ui.ssub==='bib')+'">Bibliografía</button></div>';
+  return s+(ui.ssub==='ej'?viewEj():viewBib());
+}
+function viewMacro(){
+  var s='<div class="sub" role="group" aria-label="Sección"><button data-sub="mankiw" aria-pressed="'+(ui.sub==='mankiw')+'">Mankiw</button><button data-sub="clases" aria-pressed="'+(ui.sub==='clases')+'">Clases y lecturas</button></div>';
+  return s+(ui.sub==='mankiw'?viewMankiw():viewClases());
+}
+
+function render(){
+  var v=$('#view');
+  var y=window.scrollY;
+  var warn=(!storageOK)?'<div class="warn"><b>Este navegador no está guardando tus datos.</b> Lo que marques se pierde al cerrar. Exportá tu progreso desde “Respaldo”.</div>':'';
+  v.innerHTML=warn+(ui.tab==='stat'?viewStat():viewMacro());
+  $('#ttl-sub').textContent=ui.tab==='stat'?(ui.ssub==='bib'?'Análisis Estadístico I · Bibliografía':'Análisis Estadístico I · Ejercicios'):(ui.sub==='mankiw'?'Macroeconomía I · Mankiw':'Macroeconomía I · Clases');
+  ['stat','macro'].forEach(function(t){var b=$('#tab-'+t); if(t===ui.tab)b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current')});
+  window.scrollTo(0,y);
+}
+
+/* ================= ACCIONES ================= */
+function setCell(map,key,n){var cur=map[key]; if(cur===brush)delete map[key]; else map[key]=brush}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-stat],[data-mk],[data-brush],[data-capall],[data-upto],[data-sub],[data-ssub],[data-tab]');
+  if(!t)return;
+  if(t.dataset.brush){brush=t.dataset.brush;render();return}
+  if(t.dataset.stat){var p=t.dataset.stat.split(':'),m=state.stat[p[0]];var cur=m[p[1]]; if(cur===brush)delete m[p[1]]; else m[p[1]]=brush; save();render();return}
+  if(t.dataset.mk){setCell(state.mk,t.dataset.mk); save();render();return}
+  if(t.dataset.capall){
+    var c=chById(t.dataset.capall), all=chDone(c)===c.secs.length;
+    undoable(all?chLabel(c)+': borrado':chLabel(c)+': marcado como leído',function(){c.secs.forEach(function(_,i){var k=c.id+'.'+(i+1); if(all)delete state.mk[k]; else state.mk[k]='d'})});
+    return;
+  }
+  if(t.dataset.upto){
+    var d=t.dataset.upto;
+    undoable('Marcado lo obligatorio hasta el '+dmy(d),function(){ROWS.forEach(function(r){if(r.d<=d)r.items.forEach(function(i){if(i.counted)state.cr[i.k]=1})})});
+    return;
+  }
+  if(t.dataset.sub){ui.sub=t.dataset.sub;saveUi();render();window.scrollTo(0,0);return}
+  if(t.dataset.ssub){ui.ssub=t.dataset.ssub;saveUi();render();window.scrollTo(0,0);return}
+  if(t.dataset.tab){ui.tab=t.dataset.tab;saveUi();render();window.scrollTo(0,0);return}
+});
+document.addEventListener('change',function(e){
+  var t=e.target; if(t.matches&&t.matches('input[data-cr]')){var k=t.dataset.cr; if(t.checked)state.cr[k]=1; else delete state.cr[k]; save();render()}
+});
+document.addEventListener('toggle',function(e){
+  var t=e.target; if(t.tagName==='DETAILS'&&t.dataset.open){var k=t.dataset.open; if(k.charAt(0)==='c')openCaps[k]=t.open; else openUnits[k]=t.open}
+},true);
+window.addEventListener('hashchange',function(){hashToUi();render()});
+
+/* ================= RESPALDO ================= */
+function exportObj(){return {app:'Avance Economía UBA',version:VERSION,exportado:new Date().toISOString(),state:state}}
+function exportText(){return JSON.stringify(exportObj(),null,1)}
+function summary(s){
+  var D=0,T=0; STAT.forEach(function(p){T+=p.total;Object.keys(s.stat[p.id]).forEach(function(k){if(s.stat[p.id][k]==='d')D++})});
+  var mkD=0,mkT=0,cat=0,catT=0; CH.forEach(function(c){c.secs.forEach(function(_,i){mkT++;var d=s.mk[c.id+'.'+(i+1)]==='d'; if(d)mkD++; if(CAT[c.n]){catT++;if(d)cat++}})});
+  var crD=0; COUNTED_KEYS.forEach(function(k){if(s.cr[k])crD++});
+  var bD=0; BIB_KEYS.forEach(function(k){if(s.cr[k])bD++});
+  return [['Estadística (ejercicios)',D,T],['Bibliografía de Estadística',bD,BIB_KEYS.length],['Mankiw (secciones)',mkD,mkT],['Cátedra Mankiw (secciones)',cat,catT],['Lecturas y guías de Macro',crD,COUNTED_KEYS.length]];
+}
+function sumHTML(s){return '<div class="sumtbl">'+summary(s).map(function(r){return '<span>'+r[0]+'</span><span>'+r[1]+'</span><span>/ '+r[2]+'</span>'}).join('')+'</div>'}
+var deferredInstall=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredInstall=e});
+function isStandalone(){return window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches||navigator.standalone}
+
+function openMenu(){
+  var h='<h2>Tu progreso</h2>'+
+   '<p>Se guarda solo, en este celular y en esta app. Si borrás los datos del navegador o cambiás de teléfono, se pierde: exportá un respaldo de vez en cuando.</p>'+
+   '<p class="meta">Último guardado: <b>'+fmtTime(state.meta.saved)+'</b><br>Último respaldo exportado: <b>'+fmtTime(state.meta.lastExport)+'</b></p>'+
+   '<button class="btn primary" id="m-exp">Exportar respaldo (archivo)</button>'+
+   '<button class="btn" id="m-copy">Copiar respaldo al portapapeles</button>'+
+   '<button class="btn" id="m-imp">Importar desde archivo…</button>'+
+   '<details><summary>Importar pegando el texto</summary><textarea id="m-paste" placeholder="Pegá acá el respaldo copiado" spellcheck="false"></textarea><button class="btn" id="m-paste-go" style="margin-top:8px">Importar texto pegado</button></details>'+
+   '<div id="m-out"></div>'+
+   (deferredInstall&&!isStandalone()?'<button class="btn" id="m-inst">Instalar como app en este celular</button>':'')+
+   '<button class="btn" id="m-close">Cerrar</button><p class="meta">Versión '+VERSION+' · funciona sin conexión</p>';
+  $('#dlg-body').innerHTML=h; var d=$('#dlg'); if(!d.open){if(d.showModal)d.showModal(); else d.setAttribute('open','')}
+  $('#m-close').onclick=function(){d.close()};
+  $('#m-exp').onclick=doExport;
+  $('#m-copy').onclick=doCopy;
+  $('#m-imp').onclick=function(){$('#file').click()};
+  $('#m-paste-go').onclick=function(){tryImport($('#m-paste').value)};
+  var inst=$('#m-inst'); if(inst)inst.onclick=function(){deferredInstall.prompt();deferredInstall=null;d.close()};
+}
+function doExport(){
+  var name='avance-economia-'+TODAY+'.json';
+  state.meta.lastExport=new Date().toISOString(); save();
+  try{
+    var blob=new Blob([exportText()],{type:'application/json'}), url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},4000);
+    $('#m-out').innerHTML='<p>Se descargó <b>'+esc(name)+'</b>. Buscalo en Descargas y guardalo en Drive o mandalo por mail.</p>';
+  }catch(e){ $('#m-out').innerHTML='<p>No se pudo descargar. Usá “Copiar respaldo” y pegalo en un mensaje o nota.</p>' }
+}
+function doCopy(){
+  var txt=exportText();
+  function fallback(){ $('#m-out').innerHTML='<textarea id="m-sel" readonly></textarea>'; var ta=$('#m-sel'); ta.value=txt; ta.focus(); ta.select(); }
+  state.meta.lastExport=new Date().toISOString(); save();
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){$('#m-out').innerHTML='<p>Copiado. Pegalo en una nota o un mensaje a vos mismo.</p>'},fallback)}else fallback();
+}
+function tryImport(text){
+  var s=null; try{s=sanitize(JSON.parse(text))}catch(e){}
+  var out=$('#m-out');
+  if(!s){out.innerHTML='<p><b>Ese texto no es un respaldo válido de esta app.</b> No se cambió nada.</p>';return}
+  out.innerHTML='<p><b>Vas a reemplazar tu progreso actual por este:</b></p>'+sumHTML(s)+'<p>Tu progreso actual:</p>'+sumHTML(state)+
+   '<button class="btn danger" id="m-ok">Reemplazar mi progreso</button><button class="btn" id="m-no">Cancelar</button>';
+  $('#m-no').onclick=function(){out.innerHTML=''};
+  $('#m-ok').onclick=function(){var le=state.meta.lastExport; state=s; state.meta.lastExport=state.meta.lastExport||le; save(); render(); $('#dlg').close(); snack('Progreso importado')};
+}
+$('#btn-menu').addEventListener('click',openMenu);
+$('#file').addEventListener('change',function(e){
+  var f=e.target.files&&e.target.files[0]; if(!f)return;
+  var r=new FileReader(); r.onload=function(){ if(!$('#dlg').open)openMenu(); tryImport(String(r.result)) }; r.readAsText(f); e.target.value='';
+});
+
+/* ================= SERVICE WORKER ================= */
+if('serviceWorker' in navigator&&location.protocol!=='file:'){
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+  navigator.serviceWorker.addEventListener('message',function(e){if(e.data&&e.data.type==='updated')snack('Hay una versión nueva. Cerrá y volvé a abrir la app para usarla.')});
+}
+render();
+})();
+</script>
+</body>
+</html>
